@@ -8,6 +8,7 @@ pub enum SecretError {
     InvalidKey(String),
     InvalidVal(String),
     ClipboardErr(String),
+    StoreErr(String),
 }
 
 impl std::fmt::Display for SecretError {
@@ -16,6 +17,7 @@ impl std::fmt::Display for SecretError {
             SecretError::InvalidKey(msg) => write!(f, "{}", msg),
             SecretError::InvalidVal(msg) => write!(f, "{}", msg),
             SecretError::ClipboardErr(msg) => write!(f, "{}", msg),
+            SecretError::StoreErr(msg) => write!(f, "{}", msg),
         }
     }
 }
@@ -44,6 +46,10 @@ impl Secret {
         }
 
         Ok(Secret { key, val })
+    }
+
+    pub fn key(&self) -> &String {
+        &self.key
     }
 
     pub fn val(&self) -> &String {
