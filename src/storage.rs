@@ -1,12 +1,14 @@
+use crate::crypto::Crypto;
 use crate::secret::{Secret, SecretError};
 use rusqlite::{Connection, Result};
 
 pub struct Store {
     conn: Connection,
+    crypto: Crypto,
 }
 
 impl Store {
-    pub fn new(db_path: &str) -> Result<Self, SecretError> {
+    pub fn new(db_path: &str, crypto: Crypto) -> Result<Self, SecretError> {
         let conn = Connection::open(db_path)
             .map_err(|e| SecretError::StoreErr(format!("Failed to open database: {}", e)))?;
 
@@ -19,17 +21,17 @@ impl Store {
         )
         .map_err(|e| SecretError::StoreErr(format!("Failed to create table: {}", e)))?;
 
-        Ok(Store { conn })
+        Ok(Store { conn, crypto })
     }
 
     pub fn save(&self, secret: &Secret) -> Result<(), SecretError> {
+        let encrypted_val = self.crypto.encrypt(&secret.val())?;
         self.conn
             .execute(
                 "INSERT OR REPLACE INTO secrets (key, val) VALUES (?1, ?2)",
-                [secret.key(), secret.val()],
+                [secret.key(), &encrypted_val],
             )
             .map_err(|e| SecretError::StoreErr(format!("Failed to save: {}", e)))?;
-
         Ok(())
     }
 
@@ -52,10 +54,11 @@ impl Store {
             .get(0)
             .map_err(|e| SecretError::StoreErr(format!("Failed to get key: {}", e)))?;
 
-        let val: String = row
+        let encrypted_val: String = row
             .get(1)
             .map_err(|e| SecretError::StoreErr(format!("Failed to get value: {}", e)))?;
 
+        let val = self.crypto.decrypt(&encrypted_val)?;
         Ok(Secret::new(key, val)?)
     }
 

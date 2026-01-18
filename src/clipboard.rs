@@ -66,12 +66,6 @@ fn is_installed(binary_name: &str) -> bool {
         .unwrap_or(false)
 }
 
-// #[cfg(target_os = "linux")]
-// fn copy_to_clipboard(text: &str) -> Result<(), SecretError> {
-//     let clipboard = get_clipboard_strategy()?;
-//     clipboard.copy(text)
-// }
-
 /// Factory function to select the right strategy
 #[cfg(target_os = "linux")]
 pub fn get_clipboard_strategy() -> Result<Box<dyn Clipboard>, SecretError> {

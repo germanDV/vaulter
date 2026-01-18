@@ -6,6 +6,7 @@ mod storage;
 use clap::{Parser, Subcommand};
 use clipboard::get_clipboard_strategy;
 use crypto::Crypto;
+use rpassword;
 use secret::{Secret, SecretError};
 use std::env;
 use storage::Store;
@@ -41,10 +42,11 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
-    let db_path = get_db_path();
-    let store = Store::new(&db_path).unwrap();
+    let encryption_passphrase = get_encryption_passphrase();
+    let crypto = Crypto::new(&encryption_passphrase).unwrap();
 
-    let _encryption_passphrase = get_encryption_passphrase();
+    let db_path = get_db_path();
+    let store = Store::new(&db_path, crypto).unwrap();
 
     match cli.command {
         Commands::Set { key, val } => match save_secret(&store, key, val) {
@@ -57,8 +59,9 @@ fn main() {
         },
         Commands::All => match list_secrets(&store) {
             Ok(keys) => {
+                println!("Secrets in vault:");
                 for key in keys {
-                    println!("{}", key);
+                    println!("  - {}", key);
                 }
             }
             Err(e) => eprintln!("Error: {}", e),
@@ -105,10 +108,11 @@ fn get_db_path() -> String {
 /// This passphrase is used to derive an enncryption key.
 fn get_encryption_passphrase() -> String {
     env::var("VAULTER_PASSPHRASE").unwrap_or_else(|_| {
-        let mut passphrase = String::new();
         println!("VAULTER_PASSPHRASE not set.");
         println!("Enter encryption passphrase:");
-        std::io::stdin().read_line(&mut passphrase).unwrap();
-        passphrase
+        rpassword::read_password()
+            .expect("Failed to read password from stdin")
+            .trim()
+            .to_string()
     })
 }
