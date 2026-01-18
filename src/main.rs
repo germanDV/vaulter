@@ -5,6 +5,7 @@ mod storage;
 use clap::{Parser, Subcommand};
 use clipboard::get_clipboard_strategy;
 use secret::{Secret, SecretError};
+use std::env;
 use storage::Store;
 
 #[derive(Parser)]
@@ -18,7 +19,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Set a key-value pair
+    /// Set (or update) a key-value pair
     #[command(alias = "s")]
     Set { key: String, val: String },
     /// Copy a value to the clipboard
@@ -30,13 +31,16 @@ enum Commands {
     /// Delete a key
     #[command(alias = "d")]
     Del { key: String },
+    /// Show location of database file
+    #[command(alias = "l")]
+    Location,
 }
 
 fn main() {
     let cli = Cli::parse();
 
-    let db_path = "vaulter.sqlite";
-    let store = Store::new(db_path).unwrap();
+    let db_path = get_db_path();
+    let store = Store::new(&db_path).unwrap();
 
     match cli.command {
         Commands::Set { key, val } => match save_secret(&store, key, val) {
@@ -59,6 +63,7 @@ fn main() {
             Ok(_) => println!("Secret deleted successfully"),
             Err(e) => eprintln!("Error: {}", e),
         },
+        Commands::Location => println!("Database location: {}", get_db_path()),
     }
 }
 
@@ -79,4 +84,15 @@ fn get_secret(store: &Store, key: String) -> Result<(), SecretError> {
     let s = store.get(&key)?;
     let clipboard = get_clipboard_strategy()?;
     clipboard.copy(&s.val())
+}
+
+/// Get the path to the database file based on the OS.
+fn get_db_path() -> String {
+    env::var("VAULTER_DB_PATH").unwrap_or_else(|_| {
+        let mut path = dirs::data_local_dir().expect("Could not determine data directory");
+        path.push("vaulter");
+        std::fs::create_dir_all(&path).ok(); // Create it if it doesn't exist
+        path.push("vault.db");
+        path.to_str().unwrap().to_string()
+    })
 }
