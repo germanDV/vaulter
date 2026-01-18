@@ -41,35 +41,46 @@ enum Commands {
 
 fn main() {
     let cli = Cli::parse();
-
-    let encryption_passphrase = get_encryption_passphrase();
-    let crypto = Crypto::new(&encryption_passphrase).unwrap();
-
     let db_path = get_db_path();
-    let store = Store::new(&db_path, crypto).unwrap();
 
     match cli.command {
-        Commands::Set { key, val } => match save_secret(&store, key, val) {
-            Ok(_) => println!("Secret saved successfully"),
-            Err(e) => eprintln!("Error: {}", e),
-        },
-        Commands::Get { key } => match get_secret(&store, key) {
-            Ok(_) => println!("Secret copied to clipboard"),
-            Err(e) => eprintln!("Error: {}", e),
-        },
-        Commands::All => match list_secrets(&store) {
-            Ok(keys) => {
-                println!("Secrets in vault:");
-                for key in keys {
-                    println!("  - {}", key);
-                }
+        Commands::Set { key, val } => {
+            let encryption_passphrase = get_encryption_passphrase();
+            let crypto = Crypto::new(&encryption_passphrase).unwrap();
+            let store = Store::new(&db_path).unwrap().with_crypto(crypto);
+            match save_secret(&store, key, val) {
+                Ok(_) => println!("Secret saved successfully"),
+                Err(e) => eprintln!("Error: {}", e),
             }
-            Err(e) => eprintln!("Error: {}", e),
-        },
-        Commands::Del { key } => match delete_secret(&store, key) {
-            Ok(_) => println!("Secret deleted successfully"),
-            Err(e) => eprintln!("Error: {}", e),
-        },
+        }
+        Commands::Get { key } => {
+            let encryption_passphrase = get_encryption_passphrase();
+            let crypto = Crypto::new(&encryption_passphrase).unwrap();
+            let store = Store::new(&db_path).unwrap().with_crypto(crypto);
+            match get_secret(&store, key) {
+                Ok(_) => println!("Secret copied to clipboard"),
+                Err(e) => eprintln!("Error: {}", e),
+            }
+        }
+        Commands::All => {
+            let store = Store::new(&db_path).unwrap();
+            match list_secrets(&store) {
+                Ok(keys) => {
+                    println!("Secrets in vault:");
+                    for key in keys {
+                        println!("  - {}", key);
+                    }
+                }
+                Err(e) => eprintln!("Error: {}", e),
+            }
+        }
+        Commands::Del { key } => {
+            let store = Store::new(&db_path).unwrap();
+            match delete_secret(&store, key) {
+                Ok(_) => println!("Secret deleted successfully"),
+                Err(e) => eprintln!("Error: {}", e),
+            }
+        }
         Commands::Location => println!("Database location: {}", get_db_path()),
     }
 }

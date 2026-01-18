@@ -4,11 +4,11 @@ use rusqlite::{Connection, Result};
 
 pub struct Store {
     conn: Connection,
-    crypto: Crypto,
+    crypto: Option<Crypto>,
 }
 
 impl Store {
-    pub fn new(db_path: &str, crypto: Crypto) -> Result<Self, SecretError> {
+    pub fn new(db_path: &str) -> Result<Self, SecretError> {
         let conn = Connection::open(db_path)
             .map_err(|e| SecretError::StoreErr(format!("Failed to open database: {}", e)))?;
 
@@ -21,11 +21,21 @@ impl Store {
         )
         .map_err(|e| SecretError::StoreErr(format!("Failed to create table: {}", e)))?;
 
-        Ok(Store { conn, crypto })
+        Ok(Store { conn, crypto: None })
+    }
+
+    pub fn with_crypto(mut self, crypto: Crypto) -> Self {
+        self.crypto = Some(crypto);
+        self
     }
 
     pub fn save(&self, secret: &Secret) -> Result<(), SecretError> {
-        let encrypted_val = self.crypto.encrypt(&secret.val())?;
+        let crypto = self
+            .crypto
+            .as_ref()
+            .ok_or(SecretError::CryptoErr("Crypto not initialized".to_string()))?;
+
+        let encrypted_val = crypto.encrypt(&secret.val())?;
         self.conn
             .execute(
                 "INSERT OR REPLACE INTO secrets (key, val) VALUES (?1, ?2)",
@@ -36,6 +46,11 @@ impl Store {
     }
 
     pub fn get(&self, key: &str) -> Result<Secret, SecretError> {
+        let crypto = self
+            .crypto
+            .as_ref()
+            .ok_or(SecretError::CryptoErr("Crypto not initialized".to_string()))?;
+
         let mut stmt = self
             .conn
             .prepare("SELECT key, val FROM secrets WHERE key = ?")
@@ -58,7 +73,7 @@ impl Store {
             .get(1)
             .map_err(|e| SecretError::StoreErr(format!("Failed to get value: {}", e)))?;
 
-        let val = self.crypto.decrypt(&encrypted_val)?;
+        let val = crypto.decrypt(&encrypted_val)?;
         Ok(Secret::new(key, val)?)
     }
 
