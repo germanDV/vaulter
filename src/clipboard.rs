@@ -66,7 +66,14 @@ fn is_installed(binary_name: &str) -> bool {
         .unwrap_or(false)
 }
 
+// #[cfg(target_os = "linux")]
+// fn copy_to_clipboard(text: &str) -> Result<(), SecretError> {
+//     let clipboard = get_clipboard_strategy()?;
+//     clipboard.copy(text)
+// }
+
 /// Factory function to select the right strategy
+#[cfg(target_os = "linux")]
 pub fn get_clipboard_strategy() -> Result<Box<dyn Clipboard>, SecretError> {
     if is_installed("wl-copy") {
         Ok(Box::new(WlCopy))
@@ -77,4 +84,18 @@ pub fn get_clipboard_strategy() -> Result<Box<dyn Clipboard>, SecretError> {
             "You need to install wl-copy or xsel".to_string(),
         ))
     }
+}
+
+#[cfg(target_os = "macos")]
+pub fn get_clipboard_strategy() -> Result<Box<dyn Clipboard>, SecretError> {
+    Err(SecretError::ClipboardErr(
+        "No clipboard support for MacOS yet".to_string(),
+    ))
+}
+
+#[cfg(target_os = "windows")]
+pub fn get_clipboard_strategy() -> Result<Box<dyn Clipboard>, SecretError> {
+    Err(SecretError::ClipboardErr(
+        "No, why would you use Windows?".to_string(),
+    ))
 }

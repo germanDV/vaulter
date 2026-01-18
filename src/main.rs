@@ -77,23 +77,6 @@ fn delete_secret(store: &Store, key: String) -> Result<(), SecretError> {
 
 fn get_secret(store: &Store, key: String) -> Result<(), SecretError> {
     let s = store.get(&key)?;
-    copy_to_clipboard(&s.val())
-}
-
-#[cfg(target_os = "linux")]
-fn copy_to_clipboard(text: &str) -> Result<(), SecretError> {
     let clipboard = get_clipboard_strategy()?;
-    clipboard.copy(text)
-}
-
-#[cfg(target_os = "macos")]
-fn copy_to_clipboard(text: &str) -> Result<(), SecretError> {
-    Err(SecretError::ClipboardErr(
-        "No clipboard support for MacOS yet".to_string(),
-    ))
-}
-
-#[cfg(target_os = "windows")]
-fn copy_to_clipboard(text: &str) -> Result<(), SecretError> {
-    Err(SecretError::ClipboardErr("Why?".to_string()))
+    clipboard.copy(&s.val())
 }
