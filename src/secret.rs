@@ -9,6 +9,7 @@ pub enum SecretError {
     InvalidVal(String),
     ClipboardErr(String),
     StoreErr(String),
+    CryptoErr(String),
 }
 
 impl std::fmt::Display for SecretError {
@@ -18,6 +19,7 @@ impl std::fmt::Display for SecretError {
             SecretError::InvalidVal(msg) => write!(f, "{}", msg),
             SecretError::ClipboardErr(msg) => write!(f, "{}", msg),
             SecretError::StoreErr(msg) => write!(f, "{}", msg),
+            SecretError::CryptoErr(msg) => write!(f, "{}", msg),
         }
     }
 }

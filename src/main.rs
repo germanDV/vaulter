@@ -1,9 +1,11 @@
 mod clipboard;
+mod crypto;
 mod secret;
 mod storage;
 
 use clap::{Parser, Subcommand};
 use clipboard::get_clipboard_strategy;
+use crypto::Crypto;
 use secret::{Secret, SecretError};
 use std::env;
 use storage::Store;
@@ -41,6 +43,8 @@ fn main() {
 
     let db_path = get_db_path();
     let store = Store::new(&db_path).unwrap();
+
+    let _encryption_passphrase = get_encryption_passphrase();
 
     match cli.command {
         Commands::Set { key, val } => match save_secret(&store, key, val) {
@@ -94,5 +98,17 @@ fn get_db_path() -> String {
         std::fs::create_dir_all(&path).ok(); // Create it if it doesn't exist
         path.push("vault.db");
         path.to_str().unwrap().to_string()
+    })
+}
+
+/// Get the encryption passphrase from the environment variable or prompt the user for it.
+/// This passphrase is used to derive an enncryption key.
+fn get_encryption_passphrase() -> String {
+    env::var("VAULTER_PASSPHRASE").unwrap_or_else(|_| {
+        let mut passphrase = String::new();
+        println!("VAULTER_PASSPHRASE not set.");
+        println!("Enter encryption passphrase:");
+        std::io::stdin().read_line(&mut passphrase).unwrap();
+        passphrase
     })
 }
