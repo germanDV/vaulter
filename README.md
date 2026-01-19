@@ -10,7 +10,7 @@ Recommended clipboards:
 
 ## Installation
 
-Downaload a binary for your platform. (**NOT available yet**)
+Downaload a binary for your platform.
 
 ## Usage
 
