@@ -60,10 +60,10 @@ jobs:
         uses: actions/download-artifact@v4
 
       - name: Create GitHub release
-        run: |
-          # Get the tag name
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          # Create release with all binary files
-          gh release create "$TAG_NAME" vaulter-*/vaulter-*.tar.gz vaulter-*/vaulter-*.zip
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            vaulter-*/vaulter-*.tar.gz
+            vaulter-*/vaulter-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
