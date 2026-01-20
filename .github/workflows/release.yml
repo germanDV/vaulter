@@ -66,4 +66,4 @@ jobs:
           # Create release with all binary files
           gh release create "$TAG_NAME" vaulter-*/vaulter-*.tar.gz vaulter-*/vaulter-*.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
